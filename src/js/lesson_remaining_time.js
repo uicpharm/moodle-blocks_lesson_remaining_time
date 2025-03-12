@@ -1,5 +1,3 @@
-/* eslint-env jquery */
-
 /**
  * This inspects the bits of data written on the server side for `block_lesson_remaining_time`,
  * calculates how much time is remaining, and outputs the result to the container. Since PHP and
@@ -54,24 +52,31 @@ function updateLessonRemainingTime() {
    const output = remain > 0 ? `${lang.remainingTime}: ${remain}&nbsp;${lang.minutes}` : lang.complete;
    // For efficiency, only update DOM if our message changed
    if (data.output !== output) {
-      $('section.block_lesson_remaining_time .dynamic').html(output);
-      $('section.block_lesson_remaining_time .progress div').css('width', `${pct}%`);
+      const section = Array.from(document.querySelectorAll('section.block_lesson_remaining_time .dynamic'));
+      for (let i = 0; i < section.length; i += 1) {
+         section[i].innerHTML = output;
+      }
+      const progressDivs = Array.from(document.querySelectorAll('section.block_lesson_remaining_time .progress div'));
+      for (let i = 0; i < progressDivs.length; i += 1) {
+         progressDivs[i].style.width = `${pct}%`;
+      }
       data.output = output;
    }
    // Only continue updating if time remains
    if (remain > 0) setTimeout(updateLessonRemainingTime, 1000);
 }
 
-$(document).ready(() => {
+document.addEventListener('DOMContentLoaded', () => {
    const now = Math.floor(Date.now() / 1000);
    const data = lessonRemainingTimeData;
-   const $container = $('section.block_lesson_remaining_time .dynamic');
-   const lessonTime = $container.data('lesson-time') || now;
+   const container = document.querySelector('section.block_lesson_remaining_time .dynamic');
+   if (!container) throw new Error('No remaining time block found.');
+   const lessonTime = parseInt(container.getAttribute('data-lesson-time'), 10) || now;
    data.serverClientDelta = now - lessonTime;
-   data.prevTotal = $container.data('prev-total') || 0;
-   data.startTime = $container.data('start-time') || now;
-   data.requiredTime = ($container.data('required-min') || 0) * 60;
-   data.lang = $container.data('lang');
+   data.prevTotal = parseInt(container.getAttribute('data-prev-total'), 10) || 0;
+   data.startTime = parseInt(container.getAttribute('data-start-time'), 10) || now;
+   data.requiredTime = (parseInt(container.getAttribute('data-required-min'), 10) || 0) * 60;
+   data.lang = JSON.parse(container.getAttribute('data-lang'));
    console.log('Remaining Time block initialized!', data);
    updateLessonRemainingTime();
 });
